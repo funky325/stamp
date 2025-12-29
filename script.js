@@ -2,38 +2,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const stampSlots = document.querySelectorAll('.stamp-slot');
     const currentCountDisplay = document.getElementById('current-count');
     const completionMessage = document.getElementById('completion-message');
-    
+
     // Config
     const TOTAL_STAMPS = 5;
     let currentStamps = 0;
-    
-    // Sound effect (simulated with standard detailed web audio if needed, but keeping simple for now)
-    // Optional: Add simple click sound
-    
+
     // Initialize
     updateUI();
 
     stampSlots.forEach(slot => {
         slot.addEventListener('click', () => {
             const index = parseInt(slot.getAttribute('data-index'));
-            
-            // Logic: Can only click the next available stamp
-            // e.g., if you have 0, you can only click 1. If 1, click 2.
-            // Also supports clicking already stamped ones (maybe to re-trigger? or toggle? Instructions say "click to fill")
-            // Let's implement: Click to fill next available slot, or click specific slot if it's the next one.
-            // Simplified: Clicking ANY empty slot fills the NEXT available logical slot to keep order,
-            // OR strictly: you must click slot 1, then slot 2. 
-            // UX Best practice for this: Just make the next one pulsate?
-            // Let's make it simple: Clicking the specific next slot fills it.
-            
-            if (index === currentStamps + 1) {
+
+            if (!slot.classList.contains('active')) {
                 fillStamp(index);
-            } else if (index <= currentStamps) {
-                // Already filled
-                // Maybe shake animation?
-            } else {
-                // Clicking a future stamp
-                // Shake animation?
             }
         });
     });
@@ -42,32 +24,69 @@ document.addEventListener('DOMContentLoaded', () => {
         if (index > TOTAL_STAMPS) return;
 
         const slot = document.querySelector(`.stamp-slot[data-index="${index}"]`);
-        
-        // Add active class to trigger CSS animation
+
+        // Add active class
         slot.classList.add('active');
-        
+
+        // Note: Image logic removed. CSS handles visuals (solid fill + white number)
+
         // Update state
-        currentStamps = index;
+        const activeCount = document.querySelectorAll('.stamp-slot.active').length;
+        currentStamps = activeCount;
         currentCountDisplay.textContent = currentStamps;
-        
+
+        // Add History
+        addHistoryItem();
+
         // Check completion
         if (currentStamps === TOTAL_STAMPS) {
             handleCompletion();
         }
     }
 
+    function addHistoryItem() {
+        const historyList = document.getElementById('history-list');
+
+        const item = document.createElement('div');
+        item.className = 'history-item';
+
+        const now = new Date();
+        const datePart = now.toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric'
+        });
+
+        let hours = now.getHours();
+        const ampm = hours >= 12 ? '오후' : '오전';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+
+        const timePart = `${ampm} ${hours}:${minutes}`;
+        const fullDateString = `${datePart} at ${timePart}`;
+
+        item.innerHTML = `
+            <div class="history-icon-circle">
+                 <img src="assets/coffee_cup.png" alt="Icon" class="history-icon-img">
+            </div>
+            <div class="history-details">
+                <div class="history-name">Stamp Earned</div>
+                <div class="history-date">${fullDateString}</div>
+            </div>
+            <div class="history-points">+1</div>
+        `;
+
+        historyList.prepend(item);
+    }
+
     function handleCompletion() {
-        // Wait a bit for the last stamp animation to finish
         setTimeout(() => {
             completionMessage.classList.remove('hidden');
-            
-            // Trigger confetti or some celebration?
-            // keeping it simple with CSS animations for now
         }, 600);
     }
 
     function updateUI() {
-        // Restore state if we had persistence (future proofing)
         currentCountDisplay.textContent = currentStamps;
     }
 });

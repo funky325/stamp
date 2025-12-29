@@ -121,6 +121,37 @@ body {
     color: var(--text-dark);
 }
 
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.undo-btn {
+    background: none;
+    border: 1px solid #D9CFC4;
+    border-radius: 12px;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.undo-btn:hover {
+    background-color: #EBE3D9;
+    color: var(--text-dark);
+    border-color: #C5A47E;
+}
+
+.undo-btn:active {
+    transform: scale(0.95);
+}
+
 .count-display {
     color: var(--text-muted);
     font-size: 0.95rem;
@@ -262,10 +293,26 @@ body {
     color: #998877;
 }
 
-.history-points {
-    font-weight: 700;
-    color: #C5A47E;
-    font-size: 1.1rem;
+.history-undo-btn {
+    background: none;
+    border: 1px solid #E0D3C3;
+    color: #998877;
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+}
+
+.history-undo-btn:hover {
+    background-color: #F5EFEB;
+    border-color: #C5A47E;
+    color: #3E2B26;
+}
+
+.history-undo-btn:active {
+    transform: scale(0.95);
 }
 
 @keyframes slideInRight {

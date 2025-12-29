@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const stampSlots = document.querySelectorAll('.stamp-slot');
     const currentCountDisplay = document.getElementById('current-count');
     const completionMessage = document.getElementById('completion-message');
+    // Global undo button removed from logic
 
     // Config
     const TOTAL_STAMPS = 5;
@@ -34,8 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentStamps = activeCount;
         currentCountDisplay.textContent = currentStamps;
 
-        // Generate history item data
-        const historyItemData = createHistoryData();
+        // Generate history item data (include index)
+        const historyItemData = createHistoryData(index);
 
         // Add to DOM
         addHistoryItemToDOM(historyItemData);
@@ -49,7 +50,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function createHistoryData() {
+    function removeItem(stampIndex, historyTimestamp) {
+        // 1. Deactivate Stamp
+        const slot = document.querySelector(`.stamp-slot[data-index="${stampIndex}"]`);
+        if (slot) {
+            slot.classList.remove('active');
+        }
+
+        // 2. Update Count
+        const activeCount = document.querySelectorAll('.stamp-slot.active').length;
+        currentStamps = activeCount;
+        currentCountDisplay.textContent = currentStamps;
+
+        // Hide completion if needed
+        if (currentStamps < TOTAL_STAMPS) {
+            const completionMessage = document.getElementById('completion-message');
+            if (completionMessage) completionMessage.classList.add('hidden');
+        }
+
+        // 3. Update Storage
+        let history = JSON.parse(localStorage.getItem('zerovity_history') || '[]');
+        // Filter out the item with this specific timestamp
+        history = history.filter(item => item.timestamp !== historyTimestamp);
+
+        localStorage.setItem('zerovity_history', JSON.stringify(history));
+        localStorage.setItem('zerovity_stamp_count', currentStamps);
+    }
+
+    function createHistoryData(index) {
         const now = new Date();
         const datePart = now.toLocaleDateString('ko-KR', {
             year: 'numeric',
@@ -65,10 +93,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const timePart = `${ampm} ${hours}:${minutes}`;
         const fullDateString = `${datePart} at ${timePart}`;
+        const ts = now.getTime();
 
         return {
             dateStr: fullDateString,
-            timestamp: now.getTime()
+            timestamp: ts,
+            stampIndex: index // Track which stamp this is
         };
     }
 
@@ -77,6 +107,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const item = document.createElement('div');
         item.className = 'history-item';
+        // Check if data is legacy (no timestamp) or new
+        const id = data.timestamp || Date.now();
+        item.dataset.id = id;
 
         item.innerHTML = `
             <div class="history-icon-circle">
@@ -86,44 +119,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="history-name">Stamp Earned</div>
                 <div class="history-date">${data.dateStr}</div>
             </div>
-            <div class="history-points">+1</div>
+            <button class="history-undo-btn">Undo</button>
         `;
+
+        // Attach click listener to the button
+        const btn = item.querySelector('.history-undo-btn');
+        btn.addEventListener('click', () => {
+            // Remove from DOM
+            item.remove();
+
+            // Logic to update state
+            if (data.stampIndex) {
+                removeItem(data.stampIndex, data.timestamp);
+            } else {
+                // Fallback for legacy items: just remove from storage
+                let history = JSON.parse(localStorage.getItem('zerovity_history') || '[]');
+                history = history.filter(h => h.timestamp !== data.timestamp);
+                localStorage.setItem('zerovity_history', JSON.stringify(history));
+            }
+        });
 
         historyList.prepend(item);
     }
 
-    // Wrapper for filling stamp to create data on the fly
-    function addHistoryItem() {
-        // This function is kept for backward compatibility if called elsewhere, 
-        // but logic moved to fillStamp to handle data creation + saving separately
-    }
-
     function handleCompletion() {
         setTimeout(() => {
-            completionMessage.classList.remove('hidden');
+            if (currentStamps === TOTAL_STAMPS) {
+                if (completionMessage) completionMessage.classList.remove('hidden');
+            }
         }, 600);
     }
 
     function updateUI() {
         currentCountDisplay.textContent = currentStamps;
-
-        // Mark stamps as active based on loaded state count
-        // (Assuming sequential filling for legacy support, but checking specific stamps would be better if we saved indices)
-        // For now, we save raw count, but let's assume if count is 3, stamps 1,2,3 are filled.
-        // Or if we saved specific indices...
-        // Let's rely on re-validating the UI based on `currentStamps`.
-
-        for (let i = 1; i <= currentStamps; i++) {
-            const slot = document.querySelector(`.stamp-slot[data-index="${i}"]`);
-            if (slot) slot.classList.add('active');
-        }
-
-        if (currentStamps === TOTAL_STAMPS) {
-            handleCompletion();
-        }
     }
-
-    // --- Persistence ---
 
     function saveState(newHistoryItem) {
         // Save Stamp Count
@@ -138,26 +167,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loadState() {
-        // Load Stamp Count
-        const savedCount = localStorage.getItem('zerovity_stamp_count');
-        if (savedCount) {
-            currentStamps = parseInt(savedCount);
-        }
-
-        // Load History
+        // Load History First
         const savedHistory = localStorage.getItem('zerovity_history');
         if (savedHistory) {
             const history = JSON.parse(savedHistory);
-            // history is [Newest, Older, Oldest...]
-            // We want to append them to DOM in that order (TOP to BOTTOM)
-            // historyList.prepend puts item at TOP.
-            // If we iterate 0->End:
-            // 0 (Newest) -> prepend -> [Newest]
-            // 1 (Older) -> prepend -> [Older, Newest] -> WRONG ORDER
 
-            // So we must iterate from End->0
+            // Reconstruct active slots from history
+            currentStamps = 0;
+            const activeIndices = new Set();
+
+            // Iterate history (Newest to Oldest)
+            // Render DOM from Newest to Oldest (using prepend logic in a reverse loop)
             for (let i = history.length - 1; i >= 0; i--) {
-                addHistoryItemToDOM(history[i]);
+                const h = history[i];
+                addHistoryItemToDOM(h);
+                if (h.stampIndex) {
+                    activeIndices.add(h.stampIndex);
+                }
+            }
+
+            // Update Active Slots
+            activeIndices.forEach(index => {
+                const slot = document.querySelector(`.stamp-slot[data-index="${index}"]`);
+                if (slot) slot.classList.add('active');
+            });
+
+            currentStamps = activeIndices.size;
+
+            // Check legacy mismatch (if no indices were saved previously but count > 0)
+            if (currentStamps === 0 && history.length > 0) {
+                // Fallback: If we have history but no indices, try to trust saved count?
+                // Or just assume stamp 1..N
+                const savedCount = localStorage.getItem('zerovity_stamp_count');
+                if (savedCount) {
+                    currentStamps = parseInt(savedCount);
+                    for (let i = 1; i <= currentStamps; i++) {
+                        const slot = document.querySelector(`.stamp-slot[data-index="${i}"]`);
+                        if (slot) slot.classList.add('active');
+                    }
+                }
+            }
+
+        } else {
+            // Fallback to legacy count
+            const savedCount = localStorage.getItem('zerovity_stamp_count');
+            if (savedCount) {
+                currentStamps = parseInt(savedCount);
+                for (let i = 1; i <= currentStamps; i++) {
+                    const slot = document.querySelector(`.stamp-slot[data-index="${i}"]`);
+                    if (slot) slot.classList.add('active');
+                }
             }
         }
     }

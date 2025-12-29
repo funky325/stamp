@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZEROVITY Cafe Stamp</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Hero Section -->
+        <header class="hero">
+            <div class="hero-image-container">
+                <img src="assets/zerovity_main.jpg" alt="Zerovity Cafe Interior" class="hero-img">
+                <div class="hero-overlay"></div>
+                <div class="hero-text">
+                    <h2 class="subtitle">DINING & LOUNGE</h2>
+                    <h1 class="title">ZEROVITY</h1>
+                    <p class="description">Experience the true freedom of weightlessness</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="stamp-section">
+            <div class="card glass-card">
+                <div class="card-header">
+                    <h3>Signature Cafe Latte</h3>
+                    <p class="stamp-progress">Collected: <span id="current-count">0</span> / 5</p>
+                </div>
+
+                <div class="stamp-grid">
+                    <!-- Stamps will be generated here or essentially hardcoded structure -->
+                    <button class="stamp-slot" aria-label="Stamp 1" data-index="1">
+                        <div class="stamp-fill"></div>
+                        <div class="stamp-placeholder">1</div>
+                    </button>
+                    <button class="stamp-slot" aria-label="Stamp 2" data-index="2">
+                        <div class="stamp-fill"></div>
+                        <div class="stamp-placeholder">2</div>
+                    </button>
+                    <button class="stamp-slot" aria-label="Stamp 3" data-index="3">
+                        <div class="stamp-fill"></div>
+                        <div class="stamp-placeholder">3</div>
+                    </button>
+                    <button class="stamp-slot" aria-label="Stamp 4" data-index="4">
+                        <div class="stamp-fill"></div>
+                        <div class="stamp-placeholder">4</div>
+                    </button>
+                    <button class="stamp-slot final-stamp" aria-label="Stamp 5" data-index="5">
+                        <div class="stamp-fill"></div>
+                        <div class="stamp-icon">☕</div>
+                    </button>
+                </div>
+
+                <div id="completion-message" class="completion-message hidden">
+                    <div class="success-icon">✨</div>
+                    <h4>Mission Completed</h4>
+                    <p>Enjoy your free coffee rewards!</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
